@@ -34,12 +34,33 @@ L.control.scale({
     imperial: false,
 }).addTo(map);
 
-// Vienna Sightseeing Haltestellen
-async function showStations(url) {
-    let response = await fetch(url);
-    let jsondata = await response.json();
-
-    // Wetterstationen mit Icons und Popups implementieren
-
+// Wetterstationen bearbeiten
+async function showStations (url) {
+    let response = await fetch(url); //Anfrage, Antwort kommt zurück
+    let jsondata = await response.json(); //json Daten aus Response entnehmen 
+    L.geoJSON(jsondata, {
+        pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+                icon: L.icon({
+                    iconUrl: `icons/wifi.png`,
+                    iconAnchor: [16, 37],
+                    popupAnchor: [0, -37],
+                })
+            });
+        },
+        onEachFeature: function (feature, layer) {
+            let prop = feature.properties; //Variable damit kürzer; * steht als Platzhalter für Bildunterschrift, Link für Infos, nur 1 Tab für Links
+            let höhenmeter = feature.geometry.coordinates
+            layer.bindPopup(`      
+            <h4>${prop.name} ${höhenmeter[2]} m ü NN</h4>
+            <um>
+            <li>Lufttemperatur (°C) ${prop.LT||"keine Angabe"}</li>
+            <li>Relative Luftfeuchte (%) ${prop.RH||"keine Angabe"}</li>
+            <li>Windgeschwindigkeit (km/h) ${prop.WG||"keine Angabe"}</li>
+            <li>Schneehöhe (cm) ${prop.HS||"keine Angabe"}</li>
+            </um>          
+            `);
+        }
+    }).addTo(themaLayer.stations); //alle Wetterstationen anzeigen als Marker
 }
 showStations("https://static.avalanche.report/weather_stations/stations.geojson");
