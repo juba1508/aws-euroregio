@@ -13,7 +13,8 @@ let map = L.map("map", {
 
 // thematische Layer
 let themaLayer = {
-    stations: L.featureGroup()
+    stations: L.featureGroup(),
+    temperature: L.featureGroup(),
 }
 
 // Hintergrundlayer
@@ -26,7 +27,8 @@ let layerControl = L.control.layers({
     "Esri WorldTopoMap": L.tileLayer.provider("Esri.WorldTopoMap"),
     "Esri WorldImagery": L.tileLayer.provider("Esri.WorldImagery")
 }, {
-    "Wetterstationen": themaLayer.stations.addTo(map)
+    "Wetterstationen": themaLayer.stations.addTo(map),
+    "Temperatur": themaLayer.temperature.addTo(map),
 }).addTo(map);
 
 // Maßstab
@@ -34,36 +36,40 @@ L.control.scale({
     imperial: false,
 }).addTo(map);
 
+function writeStationLayer(jsondata) {
 // Wetterstationen bearbeiten
-async function showStations (url) {
-    let response = await fetch(url); //Anfrage, Antwort kommt zurück
-    let jsondata = await response.json(); //json Daten aus Response entnehmen 
-    L.geoJSON(jsondata, {
-        pointToLayer: function(feature, latlng) {
-            return L.marker(latlng, {
-                icon: L.icon({
-                    iconUrl: `icons/wifi.png`,
-                    iconAnchor: [16, 37],
-                    popupAnchor: [0, -37],
-                })
-            });
-        },
+L.geoJSON(jsondata, {
+    pointToLayer: function(feature, latlng) {
+        return L.marker(latlng, {
+            icon: L.icon({
+                iconUrl: `icons/wifi.png`,
+                iconAnchor: [16, 37],
+                popupAnchor: [0, -37],
+            })
+        });
+    },
+
         onEachFeature: function (feature, layer) {
             let prop = feature.properties; //Variable damit kürzer; * steht als Platzhalter für Bildunterschrift, Link für Infos, nur 1 Tab für Links
             let höhenmeter = feature.geometry.coordinates;
+            let pointInTime = new Date(prop.date);
             console.log(pointInTime);
-            let pointInTime = prop.date;
             layer.bindPopup(`      
             <h4>${prop.name} ${höhenmeter[2]} m ü NN</h4>
             <ul>
-            <li>Lufttemperatur (°C) ${prop.LT||"keine Angabe"}</li>
-            <li>Relative Luftfeuchte (%) ${prop.RH||"keine Angabe"}</li>
-            <li>Windgeschwindigkeit (km/h) ${prop.WG ? (prop.WG*3.6).toFixed(1))||"keine Angabe"}</li>
-            <li>Schneehöhe (cm) ${prop.HS||"keine Angabe"}</li>
+            <li>Lufttemperatur (°C): ${prop.LT||"keine Angabe"}</li>
+            <li>Relative Luftfeuchte (%): ${prop.RH||"keine Angabe"}</li>
+            <li>Windgeschwindigkeit (km/h): ${prop.WG ? (prop.WG*3.6).toFixed(1) : "keine Angabe"}</li>
+            <li>Schneehöhe (cm): ${prop.HS||"keine Angabe"}</li>
             </ul>
-            <span>${pointInTime.toLocaleString}</span> 
+            <span>${pointInTime.toLocaleString()}</span> 
             `);
         }
     }).addTo(themaLayer.stations); //alle Wetterstationen anzeigen als Marker
-}
-showStations("https://static.avalanche.report/weather_stations/stations.geojson");
+    }
+    async function loadStations (url) {
+        let response = await fetch(url); //Anfrage, Antwort kommt zurück
+        let jsondata = await response.json(); //json Daten aus Response entnehmen
+        writeStationLayer(jsondata);
+    }
+loadStations("https://static.avalanche.report/weather_stations/stations.geojson");
