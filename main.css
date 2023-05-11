@@ -51,7 +51,7 @@ footer nav {
     display: inline-block;
 }
 
-.aws-div-icon {
+.aws-div-icon span{
     font-size: 1.25em;
     font-weight: bold;
     padding: 0.3em;
