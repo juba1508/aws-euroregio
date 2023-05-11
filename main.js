@@ -67,9 +67,23 @@ L.geoJSON(jsondata, {
         }
     }).addTo(themaLayer.stations); //alle Wetterstationen anzeigen als Marker
     }
+
+function writeTemperatureLayer(jsondata){
+    L.geoJSON(jsondata,{
+        pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+                icon: L.divIcon({
+                    html: `<span>${feature.properties.LT}</span>`
+                })
+            });
+        },
+    }).addTo(themaLayer.temperature);
+}
+
     async function loadStations (url) {
         let response = await fetch(url); //Anfrage, Antwort kommt zurück
         let jsondata = await response.json(); //json Daten aus Response entnehmen
         writeStationLayer(jsondata);
+        writeTemperatureLayer(jsondata);
     }
 loadStations("https://static.avalanche.report/weather_stations/stations.geojson");
