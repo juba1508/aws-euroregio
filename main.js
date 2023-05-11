@@ -27,14 +27,26 @@ let layerControl = L.control.layers({
     "Esri WorldTopoMap": L.tileLayer.provider("Esri.WorldTopoMap"),
     "Esri WorldImagery": L.tileLayer.provider("Esri.WorldImagery")
 }, {
-    "Wetterstationen": themaLayer.stations.addTo(map),
+    "Wetterstationen": themaLayer.stations,
     "Temperatur": themaLayer.temperature.addTo(map),
 }).addTo(map);
+
+layerControl.expand(); //Layer immer offen, muss nicht mehr mit einem Klick geöffnet werden
 
 // Maßstab
 L.control.scale({
     imperial: false,
 }).addTo(map);
+
+function getColor(value, ramp){
+    for(let rule of ramp) {
+        if(value >= rule.min && value < rule.max){
+            return rule.color;
+        }
+    }
+}
+
+
 
 function writeStationLayer(jsondata) {
 // Wetterstationen bearbeiten
@@ -76,10 +88,11 @@ function writeTemperatureLayer(jsondata){
             }
         },
         pointToLayer: function(feature, latlng) {
+            let color = getColor(feature.properties.LT, COLORS.temperature);
             return L.marker(latlng, {
                 icon: L.divIcon({
                     className: "aws-div-icon",
-                    html: `<span>${feature.properties.LT}</span>`
+                    html: `<span style="background-color:${color}">${feature.properties.LT.toFixed(1)}</span>`
                 })
             });
         },
