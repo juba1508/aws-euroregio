@@ -16,6 +16,7 @@ let themaLayer = {
     stations: L.featureGroup(),
     temperature: L.featureGroup(),
     windspeed: L.featureGroup(),
+    snowheight: L.featureGroup(),
 }
 
 // Hintergrundlayer
@@ -31,6 +32,8 @@ let layerControl = L.control.layers({
     "Wetterstationen": themaLayer.stations,
     "Temperatur": themaLayer.temperature.addTo(map),
     "Windgeschwindigkeit": themaLayer.windspeed.addTo(map),
+    "Schneehöhe": themaLayer.snowheight.addTo(map),
+    "Regen": themaLayer.rain.addTo(map),
 }).addTo(map);
 
 layerControl.expand(); //Layer immer offen, muss nicht mehr mit einem Klick geöffnet werden
@@ -75,6 +78,7 @@ L.geoJSON(jsondata, {
             <li>Relative Luftfeuchte (%): ${prop.RH||"keine Angabe"}</li>
             <li>Windgeschwindigkeit (km/h): ${prop.WG ? (prop.WG*3.6).toFixed(1) : "keine Angabe"}</li>
             <li>Schneehöhe (cm): ${prop.HS||"keine Angabe"}</li>
+            <li>Regen (mm/m²): ${prop.R||"keine Angabe"}</li>
             </ul>
             <span>${pointInTime.toLocaleString()}</span> 
             `);
@@ -120,11 +124,62 @@ function writeWindspeedLayer(jsondata){
     }).addTo(themaLayer.windspeed);
 }
 
+function writeSnowheightLayer(jsondata){
+    L.geoJSON(jsondata,{
+        filter: function(feature){
+            if (feature.properties.HS >= 0 && feature.properties.HS < 1000) {
+                return true;
+            }
+        },
+        pointToLayer: function(feature, latlng) {
+            let color = getColor(feature.properties.HS, COLORS.snowheight);
+            return L.marker(latlng, {
+                icon: L.divIcon({
+                    className: "aws-div-icon",
+                    html: `<span style="background-color:${color}">${(feature.properties.HS).toFixed(1)}</span>`
+                })
+            });
+        },
+    }).addTo(themaLayer.snowheight);
+}
+
+function writeRainLayer(jsondata){
+    L.geoJSON(jsondata,{
+        filter: function(feature){
+            if (feature.properties.R >= 0 && feature.properties.R < 1000) {
+                return true;
+            }
+        },
+        pointToLayer: function(feature, latlng) {
+            let color = getColor(feature.properties.R, COLORS.rain);
+            return L.marker(latlng, {
+                icon: L.divIcon({
+                    className: "aws-div-icon",
+                    html: `<span style="background-color:${color}">${(feature.properties.R).toFixed(1)}</span>`
+                })
+            });
+        },
+    }).addTo(themaLayer.rain);
+}
+
     async function loadStations (url) {
         let response = await fetch(url); //Anfrage, Antwort kommt zurück
         let jsondata = await response.json(); //json Daten aus Response entnehmen
         writeStationLayer(jsondata);
         writeTemperatureLayer(jsondata);
         writeWindspeedLayer(jsondata);
+        writeSnowheightLayer(jsondata);
+        writeRainLayer(jsondata);
     }
 loadStations("https://static.avalanche.report/weather_stations/stations.geojson");
+
+L.control.rainviewer({ 
+    position: 'bottomleft',
+    nextButtonText: '>',
+    playStopButtonText: 'Play/Stop',
+    prevButtonText: '<',
+    positionSliderLabelText: "Hour:",
+    opacitySliderLabelText: "Opacity:",
+    animationInterval: 500,
+    opacity: 0.5
+}).addTo(map);
