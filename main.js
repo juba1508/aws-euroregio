@@ -17,7 +17,6 @@ let themaLayer = {
     temperature: L.featureGroup(),
     windspeed: L.featureGroup(),
     snowheight: L.featureGroup(),
-    rain: L.featureGroup(),
 }
 
 // Hintergrundlayer
@@ -34,7 +33,6 @@ let layerControl = L.control.layers({
     "Temperatur": themaLayer.temperature.addTo(map),
     "Windgeschwindigkeit": themaLayer.windspeed.addTo(map),
     "Schneehöhe": themaLayer.snowheight.addTo(map),
-    "Regen": themaLayer.rain.addTo(map),
 }).addTo(map);
 
 layerControl.expand(); //Layer immer offen, muss nicht mehr mit einem Klick geöffnet werden
@@ -144,24 +142,7 @@ function writeSnowheightLayer(jsondata){
     }).addTo(themaLayer.snowheight);
 }
 
-function writeRainLayer(jsondata){
-    L.geoJSON(jsondata,{
-        filter: function(feature){
-            if (feature.properties.R >= 0 && feature.properties.R < 1000) {
-                return true;
-            }
-        },
-        pointToLayer: function(feature, latlng) {
-            let color = getColor(feature.properties.R, COLORS.rain);
-            return L.marker(latlng, {
-                icon: L.divIcon({
-                    className: "aws-div-icon",
-                    html: `<span style="background-color:${color}">${(feature.properties.R).toFixed(1)}</span>`
-                })
-            });
-        },
-    }).addTo(themaLayer.rain);
-}
+
 
     async function loadStations (url) {
         let response = await fetch(url); //Anfrage, Antwort kommt zurück
@@ -170,7 +151,6 @@ function writeRainLayer(jsondata){
         writeTemperatureLayer(jsondata);
         writeWindspeedLayer(jsondata);
         writeSnowheightLayer(jsondata);
-        writeRainLayer(jsondata);
     }
 loadStations("https://static.avalanche.report/weather_stations/stations.geojson");
 
