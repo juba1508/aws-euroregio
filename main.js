@@ -17,6 +17,7 @@ let themaLayer = {
     temperature: L.featureGroup(),
     windspeed: L.featureGroup(),
     snowheight: L.featureGroup(),
+    rain: L.featureGroup(),
 }
 
 // Hintergrundlayer
